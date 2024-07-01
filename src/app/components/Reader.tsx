@@ -1,113 +1,80 @@
-"use client";
-
-import * as React from 'react';
-import { Theme, useTheme } from '@mui/material/styles';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { Checkbox } from '@mui/material';
-import { Button } from '@mui/material';
+"use client"
+import React, { useEffect, useState } from 'react';
+import { Checkbox, Button, InputLabel, Input, FormControl, MenuItem } from '@mui/material';
 import handleClick from './HandleClick';
 import parseJsonString from './Parser';
-import { InputLabel } from '@mui/material';
-import { Input } from '@mui/material';
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-    PaperProps: {
-        style: {
-            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-            width: 250,
-        },
-    },
-};
-
-const names = [
-    'Oliver Hansen',
-    'Van Henry',
-    'April Tucker',
-    'Ralph Hubbard',
-    'Omar Alexander',
-    'Carlos Abbott',
-    'Miriam Wagner',
-    'Bradley Wilkerson',
-    'Virginia Andrews',
-    'Kelly Snyder',
-];
-
-function getStyles(name: string, personName: readonly string[], theme: Theme) {
-    return {
-        fontWeight:
-            personName.indexOf(name) === -1
-                ? theme.typography.fontWeightRegular
-                : theme.typography.fontWeightMedium,
-    };
-}
-
-const MultipleSelectPlaceholder: React.FC = () => {
-    const theme = useTheme();
-    const [personName, setPersonName] = React.useState<string[]>([]);
-
-    const handleChange = (event: SelectChangeEvent<typeof personName>) => {
-        const {
-            target: { value },
-        } = event;
-        setPersonName(
-            // On autofill we get a stringified value.
-            typeof value === 'string' ? value.split(',') : value,
-        );
-    };
-
-    return (
-        <FormControl sx={{ m: 1, width: 300, mt: 3 }}>
-            <Select
-                multiple
-                displayEmpty
-                value={personName}
-                onChange={handleChange}
-                input={<OutlinedInput />}
-                renderValue={(selected) => {
-                    if (selected.length === 0) {
-                        return <em>Placeholder</em>;
-                    }
-
-                    return selected.join(', ');
-                }}
-                MenuProps={MenuProps}
-                inputProps={{ 'aria-label': 'Without label' }}
-            >
-                <MenuItem disabled value="">
-                    <em>Placeholder</em>
-                </MenuItem>
-                {names.map((name) => (
-                    <MenuItem
-                        key={name}
-                        value={name}
-                        style={getStyles(name, personName, theme)}
-                    >
-                        {name}
-                    </MenuItem>
-                ))}
-            </Select>
-        </FormControl>
-    );
-};
+import Select from '@mui/material/Select';
 
 const SerialPortComponent: React.FC = () => {
+    const [orderName, setOrderName] = useState<string>('');
+    const [deviceType, setDeviceType] = useState<string>('');
+    const [count, setCount] = useState<string>('');
+    const [user, setUser] = useState<string>('');
+    const [deviceEui, setDeviceEui] = useState<string>('');
+    const [status, setStatus] = useState<number>(10);
+    const [appEui, setAppEui] = useState<string>('');
+    const [appKey, setAppKey] = useState<string>('');
+    const [sendPeriod, setSendPeriod] = useState<string>('');
+    const [ack, setAck] = useState<string>('');
+    const [movThr, setMovThr] = useState<string>('');
+    const [adcEnable, setAdcEnable] = useState<boolean>(false);
+    const [adcDelay, setAdcDelay] = useState<string>('');
+    const [companyName, setCompanyName] = useState<string>('');
+    const [temperature, setTemperature] = useState<string>('');
+    const [humidity, setHumidity] = useState<string>('');
+    const [deviceTypeOptions, setDeviceTypeOptions] = useState<string[]>([]);
+    const [dataRateOptions, setDataRateOptions] = useState<string[]>([]);
+    const [frequencyRegionOptions, setFrequencyRegionOptions] = useState<string>("");
+    const [hybridEnableOptions, setHybridEnableOptions] = useState<string[]>([]);
+    const [hybridMaskOptions, setHybridMaskOptions] = useState<number>(0);
+
     const handleDataReceived = (data: string) => {
-        console.log("Data received in callback:", data);
         const parsedData = parseJsonString(data);
-        console.log("Parsed data:", parsedData);
+        console.log(parsedData);
+        console.log(parsedData.lora.freq_reg);
+
+        setDeviceType(parsedData.deviceType || 'Senstic');
+        setDeviceEui(parsedData.dev_eui || '');
+        setStatus(parsedData.device?.status !== undefined ? parseInt(parsedData.device.status, 10) : 10);
+        setAppEui(parsedData.join_eui || '');
+        setAppKey(parsedData.app_key || '');
+        setSendPeriod(parsedData.lora.send_period || '');
+        setAck(parsedData.lora.ack || '');
+        setMovThr(parsedData.device.mov_thr || '');
+        setAdcEnable(parsedData.adcEnable || false);
+        setAdcDelay(parsedData.device.adc_delay || '');
+        setTemperature(parsedData.sensors.temp || '');
+        setHumidity(parsedData.sensors.hum || '');
+        setDeviceTypeOptions(parsedData.deviceTypeOptions || []);
+        setDataRateOptions(parsedData.dataRateOptions || []);
+        setFrequencyRegionOptions(parsedData.lora.freq_reg || "");
+        setHybridEnableOptions(parsedData.hybridEnableOptions || []);
+        setHybridMaskOptions(parsedData.lora.mask2_5 !== undefined ? parsedData.lora.mask2_5 : 0);
     };
+
+    useEffect(() => {
+        console.log("useEffect", status);
+    }, [status]);
 
     const handleButtonClick = () => {
         handleClick(handleDataReceived);
     };
 
+    const getStatusColor = (statu: number) => {
+        console.log("tuki", statu);
+        if (statu === 0) {
+            return 'green';
+        } else if (statu === 1 || statu === 2) {
+            return 'yellow';
+        } else if (statu > 2) {
+            return 'red';
+        } else {
+            return 'bg-purple-200';
+        }
+    };
+
     return (
-        <div>
+        <div style={{ fontFamily: 'Montserrat, sans-serif' }}>
             <button onClick={handleButtonClick}>
                 Open Serial Port
             </button>
@@ -116,30 +83,40 @@ const SerialPortComponent: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div>
                         <InputLabel htmlFor="order-name">Order Name</InputLabel>
-                        <Input id="order-name" placeholder="Order name will be auto-filled from NFC tag" />
+                        <Input id="order-name" value={orderName} onChange={(e) => setOrderName(e.target.value)} placeholder="Order name will be auto-filled from NFC tag" />
                     </div>
                     <div>
                         <InputLabel htmlFor="device-type">Device Type</InputLabel>
-                        <Input id="device-type" placeholder="Device type will be auto-filled from NFC tag" />
+                        <Input id="device-type" value={deviceType} onChange={(e) => setDeviceType(e.target.value)} placeholder="Device type will be auto-filled from NFC tag" />
                     </div>
                     <div>
                         <InputLabel htmlFor="count">Count</InputLabel>
-                        <Input id="count" placeholder="Count will be auto-filled from NFC tag" disabled />
+                        <Input id="count" value={count} onChange={(e) => setCount(e.target.value)} placeholder="Count will be auto-filled from NFC tag" disabled />
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div>
                         <InputLabel htmlFor="user">User</InputLabel>
-                        <Input id="user" placeholder="User will be auto-filled from NFC tag" />
+                        <Input id="user" value={user} onChange={(e) => setUser(e.target.value)} placeholder="User will be auto-filled from NFC tag" />
                     </div>
                     <div>
                         <InputLabel htmlFor="device-eui">Device EUI</InputLabel>
-                        <Input id="device-eui" placeholder="Device EUI will be auto-filled from NFC tag" disabled />
+                        <Input id="device-eui" value={deviceEui} onChange={(e) => setDeviceEui(e.target.value)} placeholder="Device EUI will be auto-filled from NFC tag" disabled />
                     </div>
                 </div>
                 <div className="mb-8">
                     <InputLabel htmlFor="status">Status OK/NOT OK</InputLabel>
-                    <Input id="status" placeholder="Status will be auto-filled from NFC tag" className="bg-green-200 w-full" disabled />
+                    <Input
+                        id="status"
+                        value={status}
+                        onChange={(e) => setStatus(parseInt(e.target.value, 10))}
+                        placeholder="Status will be auto-filled from NFC tag"
+                        sx={{
+                            backgroundColor: getStatusColor(status),
+                            width: '100%',
+                        }}
+                        disabled
+                    />
                 </div>
                 <div className="my-4">
                     <hr className="border-black border-2" />
@@ -147,57 +124,121 @@ const SerialPortComponent: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div>
                         <InputLabel htmlFor="choose-device-type">Choose Device Type</InputLabel>
-                        <MultipleSelectPlaceholder />
+                        <FormControl fullWidth>
+                            <Select
+                                id="choose-device-type"
+                                value={deviceType}
+                                onChange={(e) => setDeviceType(e.target.value as string)}
+                                displayEmpty
+                            >
+                                {deviceTypeOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </div>
                     <div>
                         <InputLabel htmlFor="app-eui">App EUI</InputLabel>
-                        <Input id="app-eui" placeholder="App EUI will be auto-filled from NFC tag" disabled />
+                        <Input id="app-eui" value={appEui} onChange={(e) => setAppEui(e.target.value)} placeholder="App EUI will be auto-filled from NFC tag" disabled />
                     </div>
                     <div>
                         <InputLabel htmlFor="app-key">App Key</InputLabel>
-                        <Input id="app-key" placeholder="App key will be auto-filled from NFC tag" disabled />
+                        <Input id="app-key" value={appKey} onChange={(e) => setAppKey(e.target.value)} placeholder="App key will be auto-filled from NFC tag" disabled />
                     </div>
                     <div>
                         <InputLabel htmlFor="data-rate">Data Rate</InputLabel>
-                        <MultipleSelectPlaceholder />
+                        <FormControl fullWidth>
+                            <Select
+                                id="data-rate"
+                                value={''} // Replace with appropriate state
+                                onChange={(e) => {/* set appropriate state */ }}
+                                displayEmpty
+                            >
+                                {dataRateOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </div>
                     <div>
                         <InputLabel htmlFor="frequency-region">Frequency Region</InputLabel>
-                        <MultipleSelectPlaceholder />
+                        <FormControl fullWidth>
+                            <Select
+                                id="frequency-region"
+                                value={frequencyRegionOptions}
+                                onChange={(e) => setFrequencyRegionOptions(e.target.value as string)}
+                            >
+                                <MenuItem value='AS923'>AS923</MenuItem>
+                                <MenuItem value="x">2</MenuItem>
+                                <MenuItem value="Y">3</MenuItem>
+                                <MenuItem value="z">4</MenuItem>
+                            </Select>
+                        </FormControl>
                     </div>
                     <div>
                         <InputLabel htmlFor="hybrid-enable">Hybrid Enable + AS923 Offset + MA</InputLabel>
-                        <MultipleSelectPlaceholder />
+                        <FormControl fullWidth>
+                            <Select
+                                id="hybrid-enable"
+                                value={''} // Replace with appropriate state
+                                onChange={(e) => {/* set appropriate state */ }}
+                                displayEmpty
+                            >
+                                {hybridEnableOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>{option}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </div>
                     <div>
                         <InputLabel htmlFor="hybrid-mask">Hybrid Mask 2-5</InputLabel>
-                        <MultipleSelectPlaceholder />
+                        <FormControl fullWidth>
+                            <Select
+                                id="hybrid-mask"
+                                value={hybridMaskOptions} // Replace with appropriate state
+                                //onChange={(e) => setHybridMaskOptions(parseInt(e.target.value, 10))}
+                                displayEmpty
+                            >
+                                <MenuItem value="128">128</MenuItem>
+                                <MenuItem value="2">2</MenuItem>
+                                <MenuItem value="3">3</MenuItem>
+                                <MenuItem value="4">4</MenuItem>
+                            </Select>
+                        </FormControl>
                     </div>
                     <div>
                         <InputLabel htmlFor="send-period">Send Period</InputLabel>
-                        <Input id="send-period" placeholder="Send period will be auto-filled from NFC tag" disabled />
+                        <Input id="send-period" value={sendPeriod} onChange={(e) => setSendPeriod(e.target.value)} placeholder="Send period will be auto-filled from NFC tag" disabled />
                     </div>
                     <div>
                         <InputLabel htmlFor="ack">Ack</InputLabel>
-                        <Input id="ack" placeholder="Ack will be auto-filled from NFC tag" disabled />
+                        <Input id="ack" value={ack} onChange={(e) => setAck(e.target.value)} placeholder="Ack will be auto-filled from NFC tag" disabled />
                     </div>
                     <div>
                         <InputLabel htmlFor="mov-thr">Mov Thr</InputLabel>
-                        <Input id="mov-thr" placeholder="Mov thr will be auto-filled from NFC tag" />
+                        <Input id="mov-thr" value={movThr} onChange={(e) => setMovThr(e.target.value)} placeholder="Mov thr will be auto-filled from NFC tag" />
                     </div>
                     <div>
                         <InputLabel htmlFor="adc-enable">ADC Enable</InputLabel>
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="adc-enable" disabled />
+                            <Checkbox id="adc-enable" checked={adcEnable} onChange={(e) => setAdcEnable(e.target.checked)} />
                         </div>
                     </div>
                     <div>
                         <InputLabel htmlFor="adc-delay">ADC Delay</InputLabel>
-                        <Input id="adc-delay" placeholder="ADC delay will be auto-filled from NFC tag" disabled />
+                        <Input id="adc-delay" value={adcDelay} onChange={(e) => setAdcDelay(e.target.value)} placeholder="ADC delay will be auto-filled from NFC tag" disabled />
                     </div>
                     <div>
                         <InputLabel htmlFor="company-name">Enter Company Name</InputLabel>
-                        <Input id="company-name" placeholder="Company name will be auto-filled from NFC tag" disabled />
+                        <Input id="company-name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Company name will be auto-filled from NFC tag" disabled />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="temperature">Temperature</InputLabel>
+                        <Input id="temperature" value={temperature} onChange={(e) => setTemperature(e.target.value)} placeholder="Temperature will be auto-filled from sensor" disabled />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="humidity">Humidity</InputLabel>
+                        <Input id="humidity" value={humidity} onChange={(e) => setHumidity(e.target.value)} placeholder="Humidity will be auto-filled from sensor" disabled />
                     </div>
                 </div>
                 <div className="flex justify-center gap-4">
